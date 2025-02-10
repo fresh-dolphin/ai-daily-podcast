@@ -1,9 +1,8 @@
 import os
-from datetime import datetime
 from pathlib import Path
 
 import httpx
-from elevenlabs import play, ElevenLabs, VoiceSettings
+from elevenlabs import ElevenLabs
 
 
 def generate_audio_from(text_to_speech: str, out_dir: Path):
@@ -19,7 +18,7 @@ def generate_audio_from(text_to_speech: str, out_dir: Path):
 
     audio = eleven_labs_client.text_to_speech.convert(
         text=text_to_speech,
-        voice_id="PBaBRSRTvwmnK1PAq9e0", # JeiJo voice
+        voice_id=os.environ["ELEVENLABS_VOICE_ID"],  # JeiJo voice
         model_id="eleven_multilingual_v2",
         output_format="mp3_44100_192"
     )

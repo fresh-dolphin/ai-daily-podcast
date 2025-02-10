@@ -4,9 +4,10 @@ import re
 from pathlib import Path
 
 from crawl4ai import BrowserConfig, LLMExtractionStrategy, AsyncWebCrawler, CrawlerRunConfig, CacheMode, \
-    DefaultMarkdownGenerator, MemoryAdaptiveDispatcher, CrawlerMonitor, DisplayMode, PruningContentFilter
+    DefaultMarkdownGenerator, PruningContentFilter
 
 from src.crawler.extract_schema import ExtractSchema
+
 
 class Crawler:
     def __init__(self, project_dir: Path):
@@ -39,12 +40,14 @@ class Crawler:
 
         return links
 
-    async def get_summaries_from(self, links: list[str]) -> list[str]:
-        with open(f"{self.project_dir}/prompts/nvidia/llama-3-1-nemotron-70b-instruct/podcast_script.txt") as f:
+    async def get_summaries_from(self, links: list[str]) -> list[dict]:
+        with open(f"{self.project_dir}/prompts/nvidia/llama-3-1-nemotron-70b-instruct/crawler_instructions.txt") as f:
             crawl_news_prompt = f.read()
 
+        llm_strategy = self.__get_llm_strategy(crawl_news_prompt)
+
         crawl_config = CrawlerRunConfig(
-            extraction_strategy=self.__get_llm_strategy(crawl_news_prompt),
+            extraction_strategy=llm_strategy,
             markdown_generator=self.__get_md_generator(),
             cache_mode=CacheMode.DISABLED
         )
@@ -58,16 +61,23 @@ class Crawler:
         #     )
         # )
 
-        stories: list[str] = []
+        stories: list = []
 
         async with self.crawler as crawler:
             results = await crawler.arun_many(
                 urls=links,
                 config=crawl_config,
             )
+
+            llm_strategy.show_usage()
+
             for result in results:
                 if result.success:
-                    stories.append(json.loads(result.extracted_content)[0]['content'])
+                    json_result = json.loads(result.extracted_content)[0]
+                    if not json_result['error']:
+                        stories.append(json.loads(result.extracted_content)[0])
+                    else:
+                        print(f"Error: {result.error_message}")
                 else:
                     print(f"Error: {result.error_message}")
 

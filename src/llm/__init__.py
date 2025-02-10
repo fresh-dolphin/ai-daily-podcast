@@ -4,8 +4,9 @@ from pathlib import Path
 
 from langchain_community.chat_models import ChatLiteLLM
 
+
 def generate_podcast_from(
-    stories: list[str],
+    stories: dict[str, list],
     project_dir: Path
 ) -> str:
     with open(f"{project_dir}/prompts/google/gemini-2.0-pro/podcast_script.txt") as f:
