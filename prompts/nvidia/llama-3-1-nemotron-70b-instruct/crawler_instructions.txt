@@ -1,0 +1,11 @@
+From the crawled content, must be returned following this format:
+```
+{
+    "content": "content summary",
+    "category": "SPORTS"
+}
+```
+
+Field "content" represents a summary in Spanish with all relevant information about the crawled content. The summary
+should not exceed 500 words. And field "category" represents a classification based on the content of the news item. The
+possible categories are: POLITIC, CULTURE, SPORTS, SCIENT, WEATHER or GENERAL
