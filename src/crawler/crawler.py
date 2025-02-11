@@ -74,8 +74,9 @@ class Crawler:
             for result in results:
                 if result.success:
                     json_result = json.loads(result.extracted_content)[0]
-                    if not json_result['error']:
-                        stories.append(json.loads(result.extracted_content)[0])
+                    error = json_result.get('error')
+                    if error is not None and error is False:
+                        stories.append(json_result)
                     else:
                         print(f"Error: {result.error_message}")
                 else:

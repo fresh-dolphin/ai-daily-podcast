@@ -7,7 +7,6 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 from src import llm, voice
-from src.crawler.crawler import Crawler
 
 ROOT_DIR = Path(os.path.dirname(os.path.abspath(__file__))).parent
 
@@ -37,45 +36,48 @@ async def main():
 
     print("STEP 1: Retrieving news from following sources:", news_source)
 
-    crawler = Crawler(ROOT_DIR)
+    # crawler = Crawler(ROOT_DIR)
+    #
+    # grouped_summaries = {
+    #     "GENERAL": [],
+    #     "POLITIC": [],
+    #     "CULTURE": [],
+    #     "SCIENT": [],
+    #     "SPORTS": [],
+    #     "WEATHER": []
+    # }
+    #
+    # for source in news_source:
+    #     links = await crawler.get_news_link_from(source)
+    #     print(f"Number of news items found: {len(links)}")
+    #
+    #     summaries = await crawler.get_summaries_from(links)
+    #     print(f"Processed {len(summaries)} of {len(links)}")
+    #
+    #     for summary in summaries:
+    #         category = summary.get('category')
+    #         if category and category in grouped_summaries:
+    #             grouped_summaries[category].append(summary['content'])
+    #         elif not category:
+    #             print("Summary without category found and ignored")
+    #         else:
+    #             print(f"Summary with unknown category: {category}")
+    #
+    # save_dict_to_file(grouped_summaries, f"{out_dir}/news.json")
 
-    grouped_summaries = {
-        "GENERAL": [],
-        "POLITIC": [],
-        "CULTURE": [],
-        "SCIENT": [],
-        "SPORTS": [],
-        "WEATHER": []
-    }
+    # if len(grouped_summaries['SCIENT']) > 2:
+    #     grouped_summaries['SCIENT'] = [grouped_summaries['SCIENT'][0], grouped_summaries['SCIENT'][1]]
+    #
+    # if len(grouped_summaries['SPORTS']) > 2:
+    #     grouped_summaries['SPORTS'] = [grouped_summaries['SPORTS'][0], grouped_summaries['SPORTS'][1]]
+    #
+    # if len(grouped_summaries['SPORTS']) > 1:
+    #     grouped_summaries['WEATHER'] = [grouped_summaries['WEATHER'][0]]
+    #
+    # save_dict_to_file(grouped_summaries, f"{out_dir}/curated_news.json")
 
-    for source in news_source:
-        links = await crawler.get_news_link_from(source)
-        print(f"Number of news items found: {len(links)}")
-
-        summaries = await crawler.get_summaries_from(links)
-        print(f"Processed {len(summaries)} of {len(links)}")
-
-        for summary in summaries:
-            category = summary.get('category')
-            if category and category in grouped_summaries:
-                grouped_summaries[category].append(summary['content'])
-            elif not category:
-                print("Summary without category found and ignored")
-            else:
-                print(f"Summary with unknown category: {category}")
-
-    save_dict_to_file(grouped_summaries, f"{out_dir}/news.json")
-
-    if len(grouped_summaries['SCIENT']) > 2:
-        grouped_summaries['SCIENT'] = [grouped_summaries['SCIENT'][0], grouped_summaries['SCIENT'][1]]
-
-    if len(grouped_summaries['SPORTS']) > 2:
-        grouped_summaries['SPORTS'] = [grouped_summaries['SPORTS'][0], grouped_summaries['SPORTS'][1]]
-
-    if len(grouped_summaries['SPORTS']) > 1:
-        grouped_summaries['WEATHER'] = [grouped_summaries['WEATHER'][0]]
-
-    save_dict_to_file(grouped_summaries, f"{out_dir}/curated_news.json")
+    with open(f"{out_dir}/curated_news.json") as f:
+        grouped_summaries = json.loads(f.read())
 
     print("STEP 2: Generating podcast script from news...")
     podcast = llm.generate_podcast_from(stories=grouped_summaries, project_dir=ROOT_DIR)
