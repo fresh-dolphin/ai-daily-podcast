@@ -1,95 +1,61 @@
 import asyncio
-import json
 import os
-from datetime import datetime
+import time
 from pathlib import Path
 
 from dotenv import load_dotenv
 
-from src import llm, voice
-from src.crawler.crawler import Crawler
+from src import llm
+from src.crawler import Crawler
+from src.filtering import apply_filter_to
+from src.tool import save_dict_to_file, save_text_to_file, get_output_dir
 
-ROOT_DIR = Path(os.path.dirname(os.path.abspath(__file__))).parent
 
-def save_dict_to_file(dictionary, file_path):
-    if os.path.exists(file_path):
-        print(f"file {file_path} exists from previous execution, overriding...")
-    with open(file_path, 'w+') as f:
-        json.dump(dictionary, f, indent=2, ensure_ascii=False)
-
-def save_text_to_file(text, file_path):
-    if os.path.exists(file_path):
-        print(f"file {file_path} exists from previous execution, overriding...")
-    with open(file_path, 'w+') as f:
-        f.write(text)
+async def retrieve_news_links(crawler: Crawler, news_source: list[str]):
+    links: list[str] = []
+    for source in news_source:
+        crawled_links = await crawler.get_news_link_from(source)
+        print(f"{len(crawled_links)} links crawled from {source}")
+        links.extend(crawled_links)
+    return links
 
 async def main():
+    start_time = time.time()
+
     load_dotenv()
 
+    project_root_dir = Path(os.path.dirname(os.path.abspath(__file__))).parent
+    output_dir = get_output_dir(project_root_dir)
+
     news_source = [
-        "https://www.rtve.es/noticias/ultimas-noticias/"
+        "https://www.rtve.es/noticias/ultimas-noticias/",
     ]
 
-    today = datetime.today().strftime('%Y-%m-%d')
-
-    out_dir = Path(f"{ROOT_DIR}/out/{today}/")
-    out_dir.mkdir(parents=True, exist_ok=True)
-
     print("STEP 1: Retrieving news from following sources:", news_source)
+    crawler = Crawler(project_root_dir)
 
-    crawler = Crawler(ROOT_DIR)
+    links = await retrieve_news_links(crawler, news_source)
 
-    grouped_summaries = {
-        "GENERAL": [],
-        "POLITIC": [],
-        "CULTURE": [],
-        "SCIENT": [],
-        "SPORTS": [],
-        "WEATHER": []
-    }
+    content_summaries = await crawler.get_summaries_from(links)
+    print(f"Processed {len(content_summaries)} of {len(links)} links")
 
-    for source in news_source:
-        links = await crawler.get_news_link_from(source)
-        print(f"Number of news items found: {len(links)}")
+    content_summaries_dict = [content.model_dump() for content in content_summaries]
+    save_dict_to_file(content_summaries_dict, f"{output_dir}/content_summaries.json")
 
-        summaries = await crawler.get_summaries_from(links)
-        print(f"Processed {len(summaries)} of {len(links)}")
+    print("STEP 2: Apply filters to crawled content...")
+    content_summaries_grouped = apply_filter_to(content_summaries)
 
-        for summary in summaries:
-            category = summary.get('category')
-            if category and category in grouped_summaries:
-                grouped_summaries[category].append(summary['content'])
-            elif not category:
-                print("Summary without category found and ignored")
-            else:
-                print(f"Summary with unknown category: {category}")
+    save_dict_to_file(content_summaries_grouped, f"{output_dir}/content_summaries_grouped.json")
 
-    save_dict_to_file(grouped_summaries, f"{out_dir}/news.json")
+    print("STEP 3: Generating podcast script from news...")
+    podcast_script = llm.generate_podcast_from(content_summaries_grouped, project_dir=project_root_dir)
+    save_text_to_file(podcast_script, f"{output_dir}/podcast_script.txt")
 
-    if len(grouped_summaries['SCIENT']) > 2:
-        grouped_summaries['SCIENT'] = [grouped_summaries['SCIENT'][0], grouped_summaries['SCIENT'][1]]
+    print("STEP 4: Generating audio...")
+    # voice.generate_audio_from(podcast_script, output_dir)
 
-    if len(grouped_summaries['SPORTS']) > 2:
-        grouped_summaries['SPORTS'] = [grouped_summaries['SPORTS'][0], grouped_summaries['SPORTS'][1]]
-
-    if len(grouped_summaries['SPORTS']) > 1:
-        grouped_summaries['WEATHER'] = [grouped_summaries['WEATHER'][0]]
-
-    save_dict_to_file(grouped_summaries, f"{out_dir}/curated_news.json")
-
-    print("STEP 2: Generating podcast script from news...")
-    podcast = llm.generate_podcast_from(stories=grouped_summaries, project_dir=ROOT_DIR)
-
-    save_text_to_file(podcast, f"{out_dir}/podcast.txt")
-
-    print("STEP 3: Generating audio...")
-    voice.generate_audio_from(podcast, out_dir)
-
-    print("It's done! Have a good day")
-
-def guard_at_least_one_source(sources):
-    if len(sources) == 0:
-        raise RuntimeError("You need to pass at least one source")
+    print("~~~ It's done! Have a good day ~~~")
+    print(f"Execution time: {time.time() - start_time} seconds")
 
 if __name__ == "__main__":
     asyncio.run(main())

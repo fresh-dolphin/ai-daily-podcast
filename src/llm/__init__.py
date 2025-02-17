@@ -9,7 +9,14 @@ def generate_podcast_from(
     stories: dict[str, list],
     project_dir: Path
 ) -> str:
-    with open(f"{project_dir}/prompts/google/gemini-2.0-pro/podcast_script.txt") as f:
+    model_provider = "openrouter"
+    model_name = "google/gemini-2.0-pro-exp-02-05"
+    model_tag = "free"
+
+    print(f"Model in use: {model_provider}/{model_name}:{model_tag}")
+
+    system_prompt: str
+    with open(f"{project_dir}/prompts/{model_name}/podcast_script.txt") as f:
         system_prompt = f.read()
 
     today = datetime.today().strftime('%Y-%m-%d')
@@ -20,14 +27,10 @@ def generate_podcast_from(
     ]
 
     llm = ChatLiteLLM(
-        model_name="openrouter/google/gemini-2.0-pro-exp-02-05:free",
+        model_name=f"{model_provider}/{model_name}:{model_tag}",
         openrouter_api_key=os.environ["OPENROUTER_API_KEY"],
         temperature=0.5
     )
 
-    print(f"Model in use {llm.model_name}")
-
-    result = llm.invoke(prompt)
-    print(f"LLM usage {result.usage_metadata}")
-
-    return result.content
+    response = llm.invoke(prompt)
+    return response.content

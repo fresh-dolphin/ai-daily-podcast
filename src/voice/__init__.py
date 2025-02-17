@@ -23,7 +23,7 @@ def generate_audio_from(text_to_speech: str, out_dir: Path):
         output_format="mp3_44100_192"
     )
 
-    with open(f"{out_dir}/podcast-audio.mp3", "wb") as f:
+    with open(f"{out_dir}/podcast_audio.mp3", "wb") as f:
         for chunk in audio:
             if chunk:
                 f.write(chunk)
