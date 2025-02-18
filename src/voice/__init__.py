@@ -3,6 +3,7 @@ from pathlib import Path
 
 import httpx
 from elevenlabs import ElevenLabs
+from pydub import AudioSegment
 
 
 def generate_audio_from(text_to_speech: str, out_dir: Path):
@@ -27,3 +28,17 @@ def generate_audio_from(text_to_speech: str, out_dir: Path):
         for chunk in audio:
             if chunk:
                 f.write(chunk)
+
+def add_audio_effects(
+        audio_file: Path,
+        project_root_dir: Path,
+        output_dir: Path
+):
+    podcast = AudioSegment.from_mp3(audio_file)
+    intro = AudioSegment.from_mp3(f"{project_root_dir}/resources/podcast_intro_sound.mp3")
+
+    seconds_to_slice = 4.1 * 1000
+
+    result = intro[:seconds_to_slice] + podcast
+
+    result.export(f"{output_dir}/podcast_audio_final_final_v2.mp3", format="mp3")

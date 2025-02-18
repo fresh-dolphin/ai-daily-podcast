@@ -17,6 +17,7 @@ def apply_filter_to(content_summaries):
         else:
             print(f"Summary with unknown category: {category}")
 
+    # TODO: Order using LLM by category, descendentemente por importancia en base a lo que la IA decida
 
     # if len(content_summaries['SCIENT']) > 2:
     #     grouped_summaries['SCIENT'] = [grouped_summaries['SCIENT'][0], grouped_summaries['SCIENT'][1]]
