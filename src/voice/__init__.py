@@ -41,4 +41,4 @@ def add_audio_effects(
 
     result = intro[:seconds_to_slice] + podcast
 
-    result.export(f"{output_dir}/podcast_audio_final_final_v2.mp3", format="mp3")
+    result.export(f"{output_dir}/podcast_audio_final_final_v2.mp3", format="mp3", bitrate="192k")
