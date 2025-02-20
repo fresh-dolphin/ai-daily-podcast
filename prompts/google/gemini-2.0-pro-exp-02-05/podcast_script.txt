@@ -10,7 +10,7 @@ Eres un locutor de radio y debes preparar un episodio de tu podcast. Siguiendo l
 
 - No hace falta añadir cabeceras, solo ir leyendo una noticia tras otra.
 
-- Entre cada noticia debes meter una pausa anotada de la siguiente manera: <break time="0.6s" />
+- Entre cada noticia debes meter una pausa anotada de la siguiente manera: <break time="0.8s" />
 
 - Las noticias deberían seguir el siguiente orden:
     1º GENERAL

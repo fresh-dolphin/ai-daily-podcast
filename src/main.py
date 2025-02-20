@@ -68,3 +68,9 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
+# TODO: Add a punctuation system to the stories/news to filter in based of interest
+# TODO: Avoid repeat same story from a day before, skip repeated links
+# TODO: On mobile, web icons are showed with wrong dimensions
+# TODO: Background music
+# TODO: Edited audio has less size that the original one
