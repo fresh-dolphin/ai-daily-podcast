@@ -1,36 +1,39 @@
+import ast
 import os
 from datetime import datetime
-from pathlib import Path
 
-from langchain_community.chat_models import ChatLiteLLM
+import httpx
 
 
 def generate_podcast_from(
     stories: dict[str, list],
-    project_dir: Path
 ) -> str:
-    model_provider = "openrouter"
-    model_name = "google/gemini-2.0-pro-exp-02-05"
-    model_tag = "free"
-
-    print(f"Model in use: {model_provider}/{model_name}:{model_tag}")
-
-    system_prompt: str
-    with open(f"{project_dir}/prompts/{model_name}/podcast_script.txt") as f:
-        system_prompt = f.read()
+    latitude_project_id = os.environ["LATITUDE_PROJECT_ID"]
+    latitude_api_url = f"https://gateway.latitude.so/api/v3/projects/{latitude_project_id}/versions/live/documents/run"
 
     today = datetime.today().strftime('%Y-%m-%d')
 
-    prompt = [
-        ("system", system_prompt),
-        ("user", f"Hoy es {today} y las noticias que hemos encontrado hoy son {stories}")
-    ]
-
-    llm = ChatLiteLLM(
-        model_name=f"{model_provider}/{model_name}:{model_tag}",
-        openrouter_api_key=os.environ["OPENROUTER_API_KEY"],
-        temperature=0.5
+    http_response = httpx.post(
+        url=latitude_api_url,
+        headers={
+            "Authorization": f"Bearer {os.environ['LATITUDE_AUTH_TOKEN']}",
+            "Content-Type": "application/json"
+        },
+        json={
+            "path": "podcast_script",
+            "stream": False,
+            "parameters": {
+                "today": today,
+                "stories": stories
+            }
+        },
+        timeout=None
     )
 
-    response = llm.invoke(prompt)
-    return response.content
+    try:
+        http_response.raise_for_status()
+        llm_response = ast.literal_eval(http_response.text)['response']['text']
+        return llm_response
+    except httpx.HTTPStatusError as exc:
+        print(f"Error response {exc.response.status_code} while requesting {exc.request.url!r}.")
+        raise exc

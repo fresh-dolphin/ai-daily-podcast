@@ -19,7 +19,7 @@ def generate_audio_from(text_to_speech: str, out_dir: Path):
 
     audio = eleven_labs_client.text_to_speech.convert(
         text=text_to_speech,
-        voice_id=os.environ["ELEVENLABS_VOICE_ID"],  # JeiJo voice
+        voice_id=os.environ["ELEVENLABS_VOICE_ID"],
         model_id="eleven_multilingual_v2",
         output_format="mp3_44100_192"
     )
