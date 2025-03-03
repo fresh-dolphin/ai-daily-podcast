@@ -1,21 +1,37 @@
-def apply_filter_to(content_summaries):
-    content_grouped = {
-        "GENERAL": [],
-        "POLITIC": [],
-        "CULTURE": [],
-        "SCIENT": [],
-        "SPORTS": [],
-        "WEATHER": []
-    }
+from collections import defaultdict
+from dataclasses import dataclass
+from typing import Dict, List
+
+from src.search import ExtractSchema
+
+
+@dataclass
+class GroupedContent:
+    summaries: Dict[str, List[str]]
+
+    def __init__(self):
+        self.summaries = defaultdict(list)
+
+    def add_summary(self, summary: ExtractSchema) -> None:
+        self.summaries[summary.category.value].append(summary.content)
+
+    def get_category_content(self, category: str) -> List[str]:
+        return self.summaries.get(category, [])
+
+    def get_all_categories(self) -> List[str]:
+        return list(self.summaries.keys())
+
+    def limit_category(self, category: str, max_items: int) -> None:
+        if category in self.summaries:
+            self.summaries[category] = self.summaries[category][:max_items]
+
+def apply_filter_to(content_summaries: list[ExtractSchema]) -> GroupedContent:
+    grouped = GroupedContent()
 
     for summary in content_summaries:
-        category = summary.category
-        if category and category in content_grouped:
-            content_grouped[category].append(summary.content)
-        elif not category:
-            print("Summary without category found and ignored")
-        else:
-            print(f"Summary with unknown category: {category}")
+        grouped.add_summary(summary)
+
+    return grouped
 
     # TODO: Order using LLM by category, descendentemente por importancia en base a lo que la IA decida
 
@@ -27,5 +43,3 @@ def apply_filter_to(content_summaries):
     #
     # if len(grouped_summaries['SPORTS']) > 1:
     #     grouped_summaries['WEATHER'] = [grouped_summaries['WEATHER'][0]]
-
-    return content_grouped

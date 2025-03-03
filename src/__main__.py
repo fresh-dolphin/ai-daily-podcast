@@ -1,58 +1,53 @@
 import asyncio
+import asyncio
 import os
-import time
+from datetime import datetime
 from pathlib import Path
 
 from dotenv import load_dotenv
 
 from src import llm, voice
-from src.crawler import Crawler
 from src.filtering import apply_filter_to
+from src.search import Searcher, ExtractSchema
+from src.search.model.source import Source
+from src.sumariser import generate_sumaries_from
 from src.tool import get_output_dir, save_dict_to_file, save_text_to_file
+from src.tool.wraps import measure_async_time
 from src.voice import add_audio_effects
 
 
-async def retrieve_news_links(crawler: Crawler, news_source: list[str]):
-    links: list[str] = []
-    for source in news_source:
-        crawled_links = await crawler.get_news_link_from(source)
-        print(f"{len(crawled_links)} links crawled from {source}")
-        links.extend(crawled_links)
-    return links
-
+@measure_async_time
 async def main():
-    start_time = time.time()
-
     load_dotenv()
 
     project_root_dir = Path(os.path.dirname(os.path.abspath(__file__))).parent
     output_dir = get_output_dir(project_root_dir)
 
-    news_source = [
-        "https://www.rtve.es/noticias/ultimas-noticias/",
+    today = datetime.today().strftime('%Y-%m-%d')
+
+    sources: list[Source] = [
+        Source("https://rtve.es/noticias/ultimas-noticias/", r"^https:\/\/www\.rtve\.es\/noticias\/\d{8}\/[a-zA-Z0-9\-]+\/\d+\.shtml$"),
+        Source("https://elpais.com/actualidad/", r"^https:\/\/elpais\.com\/[a-z-]+\/" + today + r"\/[a-z0-9-]+\.html$"), # r"^https:\/\/elpais\.com\/[a-z-]+\/\d{4}-\d{2}-\d{2}\/[a-z0-9-]+\.html$"
     ]
 
-    print("[STEP 1] -> Retrieving news from following sources:", news_source)
-    crawler = Crawler(project_root_dir)
+    print("[STEP 1] -> Searching news in the following sources:", [source.url for source in sources])
+    content_news: list[str] = await Searcher().get_news_from_sources(sources, limit_news=None)
 
-    links = await retrieve_news_links(crawler, news_source)
+    print("[STEP 2] -> Apply summaries to crawled content...")
+    content_news_summaries: list[ExtractSchema] = await generate_sumaries_from(content_news)
 
-    content_summaries = await crawler.get_summaries_from(links)
-    print(f"Processed {len(content_summaries)} of {len(links)} links")
+    print("[STEP 3] -> Apply filters to crawled content...")
+    content_summaries_grouped = apply_filter_to(content_news_summaries)
+    save_dict_to_file(content_summaries_grouped.summaries, f"{output_dir}/content_summaries_grouped.json")
 
-    content_summaries_dict = [content.model_dump() for content in content_summaries]
-    save_dict_to_file(content_summaries_dict, f"{output_dir}/content_summaries.json")
-
-    print("[STEP 2] -> Apply filters to crawled content...")
-    content_summaries_grouped = apply_filter_to(content_summaries)
-
-    save_dict_to_file(content_summaries_grouped, f"{output_dir}/content_summaries_grouped.json")
-
-    print("[STEP 3] -> Generating podcast script from news...")
-    podcast_script = llm.generate_podcast_from(content_summaries_grouped)
+    print("[STEP 4] -> Generating podcast script from news...")
+    podcast_script = llm.generate_podcast_from(content_summaries_grouped.summaries)
     save_text_to_file(podcast_script, f"{output_dir}/podcast_script.txt")
 
-    print("[STEP 4] -> Generating audio...")
+    with open(f"{output_dir}/podcast_script.txt", "r") as f:
+        podcast_script = f.read()
+
+    print("[STEP 5] -> Generating audio...")
     voice.generate_audio_from(podcast_script, output_dir)
 
     add_audio_effects(
@@ -63,13 +58,5 @@ async def main():
 
     print("~~~ It's done! Have a good day ~~~")
 
-    execution_time = round((time.time() - start_time) / 60, 2)
-    print(f"Execution time: {execution_time} mins")
-
 if __name__ == "__main__":
     asyncio.run(main())
-
-# TODO: Add a punctuation system to the stories/news to filter in based of interest
-# TODO: Avoid repeat same story from a day before, skip repeated links
-# TODO: On mobile, web icons are showed with wrong dimensions
-# TODO: Background music
