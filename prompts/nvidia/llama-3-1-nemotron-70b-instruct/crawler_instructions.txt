@@ -1,5 +1,0 @@
-- Summarise in SPANISH the crawled content in the 'content' field.
-- Summaries MUST contain all the important information to understand the full story.
-- Don't add any kind of annotation to the summary, only the content summarised.
-- Categorise the content with one of the following options in the 'category' field: POLITIC, CULTURE, SPORTS, SCIENT, WEATHER or GENERAL.
-- You can't use any other kind of categorization.
