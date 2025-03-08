@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from typing import Dict, List
 
 from src.search import ExtractSchema
+from src.tool.wraps import measure_time
 
 
 @dataclass
@@ -25,6 +26,7 @@ class GroupedContent:
         if category in self.summaries:
             self.summaries[category] = self.summaries[category][:max_items]
 
+@measure_time
 def apply_filter_to(content_summaries: list[ExtractSchema]) -> GroupedContent:
     grouped = GroupedContent()
 

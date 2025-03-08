@@ -5,7 +5,10 @@ import httpx
 from elevenlabs import ElevenLabs
 from pydub import AudioSegment
 
+from src.tool.wraps import measure_time
 
+
+@measure_time
 def generate_audio_from(text_to_speech: str, out_dir: Path):
     timeout = httpx.Timeout(15.0, read=30.0)
     client = httpx.Client(timeout=timeout)
@@ -29,6 +32,7 @@ def generate_audio_from(text_to_speech: str, out_dir: Path):
             if chunk:
                 f.write(chunk)
 
+@measure_time
 def add_audio_effects(
         audio_file: Path,
         project_root_dir: Path,
