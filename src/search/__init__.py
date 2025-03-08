@@ -4,7 +4,7 @@ import re
 from typing import Optional
 
 from crawl4ai import BrowserConfig, LLMExtractionStrategy, AsyncWebCrawler, CrawlerRunConfig, CacheMode, \
-    DefaultMarkdownGenerator, PruningContentFilter
+    DefaultMarkdownGenerator, PruningContentFilter, LXMLWebScrapingStrategy
 
 from src.search.model.extract_schema import ExtractSchema
 from src.search.model.source import Source
@@ -19,28 +19,16 @@ class Searcher:
             limit_news: Optional[int] = None
     ) -> list[str]:
         async with AsyncWebCrawler(config=self.__get_browser_config()) as crawler:
-            content_news: list[str] = []
+            links: list[str] = []
             for source in sources:
-                print(f"[{source.url}] -> start crawling...")
-                content_news.extend(await self.get_news_from_source(crawler, source, limit_news))
-            return content_news
+                crawled_links = await self.__get_news_link_from(crawler, source)
+                print(f"[{source.url}] -> {len(crawled_links)} links crawled")
 
-    async def get_news_from_source(
-            self,
-            crawler: AsyncWebCrawler,
-            source: Source,
-            limit_news: Optional[int] = None,
-    ) -> list[str]:
-        links = await self.__get_news_link_from(crawler, source)
-        print(f"[{source.url}] -> {len(links)} links crawled")
+                if limit_news: crawled_links = crawled_links[:limit_news]
+                links.extend(crawled_links)
 
-        if limit_news:
-            links = links[:limit_news]
-
-        content_news = await self.__get_content_from(crawler, links)
-        print(f"[{source.url}] -> {len(content_news)} successful news obtained of {len(links)} links crawled")
-
-        return content_news
+            print(f"Start content crawling from {len(links)} links")
+            return await self.__get_content_from(crawler, links)
 
     @staticmethod
     def __get_browser_config() -> BrowserConfig:
@@ -58,6 +46,7 @@ class Searcher:
                 exclude_external_images=True,
                 remove_overlay_elements=True,
                 cache_mode=CacheMode.DISABLED,
+                scraping_strategy=LXMLWebScrapingStrategy()
             )
         )
 
@@ -79,14 +68,15 @@ class Searcher:
             config=CrawlerRunConfig(
                 excluded_tags=["nav", "footer", "header"],
                 markdown_generator=self.__get_md_generator(),
-                cache_mode=CacheMode.DISABLED
+                cache_mode=CacheMode.DISABLED,
+                scraping_strategy=LXMLWebScrapingStrategy()
             )
         )
 
         stories: list[str] = []
         for result in results:
             if result.success:
-                stories.append(result.fit_markdown)
+                stories.append(result.markdown.fit_markdown)
             else:
                 print(f"Error in {result.url}:\n {result.error_message}")
         return stories
