@@ -44,9 +44,6 @@ async def main():
     podcast_script = llm.generate_podcast_from(content_summaries_grouped.summaries)
     save_text_to_file(podcast_script, f"{output_dir}/podcast_script.txt")
 
-    with open(f"{output_dir}/podcast_script.txt", "r") as f:
-        podcast_script = f.read()
-
     print(Fore.CYAN + "[STEP 5] -> Generating audio...")
     voice.generate_audio_from(podcast_script, output_dir)
 

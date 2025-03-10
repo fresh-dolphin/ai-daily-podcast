@@ -10,8 +10,7 @@ from src.tool.wraps import measure_time
 
 @measure_time
 def generate_audio_from(text_to_speech: str, out_dir: Path):
-    timeout = httpx.Timeout(15.0, read=30.0)
-    client = httpx.Client(timeout=timeout)
+    client = httpx.Client(timeout=httpx.Timeout(300.0))
 
     eleven_labs_client = ElevenLabs(
         api_key=os.environ["ELEVENLABS_API_KEY"],
