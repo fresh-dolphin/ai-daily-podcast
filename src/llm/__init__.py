@@ -4,19 +4,19 @@ from datetime import datetime
 
 import httpx
 from colorama import Fore
-from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
+from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
 
 from src.tool.wraps import measure_time
 
 
 def before_sleep(retry_state):
     print(f"Retry no. {retry_state.attempt_number}"
-          f"Esperando {retry_state.next_action.sleep} segundos...")
+          f"Waiting {retry_state.next_action.sleep} seg...")
 
 @retry(
     retry=retry_if_exception_type(httpx.HTTPStatusError),
     stop=stop_after_attempt(3),
-    wait=wait_exponential(multiplier=1, min=65, max=65),
+    wait=wait_fixed(62),
     before_sleep=before_sleep,
     reraise=True
 )
