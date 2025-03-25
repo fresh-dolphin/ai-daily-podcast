@@ -1,11 +1,11 @@
 import ast
 import os
-from datetime import datetime
 
 import httpx
 from colorama import Fore
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
 
+from src.tool.date import get_today_spanish_format
 from src.tool.wraps import measure_time
 
 
@@ -27,8 +27,6 @@ def generate_podcast_from(
     latitude_project_id = os.environ["LATITUDE_PROJECT_ID"]
     latitude_api_url = f"https://gateway.latitude.so/api/v3/projects/{latitude_project_id}/versions/live/documents/run"
 
-    today = datetime.today().strftime('%Y-%m-%d')
-
     http_response = httpx.post(
         url=latitude_api_url,
         headers={
@@ -39,7 +37,7 @@ def generate_podcast_from(
             "path": "podcast_script",
             "stream": False,
             "parameters": {
-                "today": today,
+                "today": get_today_spanish_format(),
                 "stories": stories
             }
         },

@@ -6,7 +6,7 @@ on:
 
 jobs:
   build:
-    runs-on: blacksmith
+    runs-on: blacksmith-4vcpu-ubuntu-2204
     steps:
       - uses: actions/checkout@v4
 
