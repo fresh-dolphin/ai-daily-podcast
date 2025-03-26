@@ -6,7 +6,7 @@ from pathlib import Path
 from colorama import init, Fore
 from dotenv import load_dotenv
 
-from src import llm, voice
+from src import llm
 from src.filtering import apply_filter_to, GroupedContent
 from src.search import Searcher, ExtractSchema
 from src.search.model.source import Source
@@ -45,13 +45,13 @@ async def main():
     save_text_to_file(podcast_script, f"{output_dir}/podcast_script.txt")
 
     print(Fore.CYAN + "[STEP 5] -> Generating audio...")
-    voice.generate_audio_from(podcast_script, output_dir)
+    # voice.generate_audio_from(podcast_script, output_dir)
 
-    voice.add_audio_effects(
-        audio_file=Path(f"{output_dir}/podcast_audio.mp3"),
-        project_root_dir=project_root_dir,
-        output_dir=output_dir
-    )
+    # voice.add_audio_effects(
+    #     audio_file=Path(f"{output_dir}/podcast_audio.mp3"),
+    #     project_root_dir=project_root_dir,
+    #     output_dir=output_dir
+    # )
 
     print("~~~ It's done! Have a good day ~~~")
 
